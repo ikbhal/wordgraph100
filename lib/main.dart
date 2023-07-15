@@ -80,22 +80,36 @@ class _NodeCreationScreenState extends State<NodeCreationScreen> {
               onPressed: () {
                 showDialog(
                   context: context,
-                  builder: (ctx) => AlertDialog(
-                    title: const Text('New Node'),
-                    content: TextField(
-                      onSubmitted: (value) {
-                        _addNode(value);
-                        Navigator.of(ctx).pop();
-                      },
-                    ),
-                    actions: [
-                      TextButton(
-                        onPressed: () => Navigator.of(ctx).pop(),
-                        child: const Text('Cancel'),
+                  builder: (ctx) {
+                    final TextEditingController textEditingController = TextEditingController();
+
+                    return AlertDialog(
+                      title: const Text('New Node'),
+                      content: TextField(
+                        controller: textEditingController,
+                        // onSubmitted: (value) {
+                        //   _addNode(value);
+                        //   Navigator.of(ctx).pop();
+                        // },
                       ),
-                    ],
-                  ),
+                      actions: [
+                        TextButton(
+                          onPressed: () {
+                            final value = textEditingController.text;
+                            _addNode(value);
+                            Navigator.of(ctx).pop();
+                          },
+                          child: const Text('Save'),
+                        ),
+                        TextButton(
+                          onPressed: () => Navigator.of(ctx).pop(),
+                          child: const Text('Cancel'),
+                        ),
+                      ],
+                    );
+                  },
                 );
+
               },
               child: const Text('Add Node'),
             ),
