@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:path/path.dart';
 import 'package:sqflite/sqflite.dart';
 
-import 'node_cart.dart';
+import 'node.dart';
+import 'node_card.dart';
 
 // import './node_card.dart';
 
@@ -48,74 +49,64 @@ class NodeCreationScreen extends StatefulWidget {
 }
 
 class _NodeCreationScreenState extends State<NodeCreationScreen> {
-  List<String> _nodes = [];
+  List<Node> _nodes = [];
 
-  void _addNode(String word) async {
+  void _addNode(String word, Offset position) async {
     final db = await widget.database;
     final id = await db.insert('nodes', {'word': word});
+
     setState(() {
-      _nodes.add(word);
+      _nodes.add(Node(id: id, word: word, position: position));
     });
-    print('Node added with ID: $id');
+  }
+
+  Widget _buildNodeWidgets() {
+    return Stack(
+      children: _nodes.map((node) {
+        return Positioned(
+          left: node.position.dx,
+          top: node.position.dy,
+          child: NodeCard(
+            node: node,
+            onSave: (updatedNode) {
+              // Update node in the list or perform any other operations
+            },
+          ),
+        );
+      }).toList(),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Create Node')),
-      body: Column(
-        children: [
-          Expanded(
-            child: ListView.builder(
-              itemCount: _nodes.length,
-              itemBuilder: (ctx, index) => NodeCard(
-                word: _nodes[index],
-                onSave: (_) {},
+      body: GestureDetector(
+        onTapUp: (details) {
+          final RenderBox box = context.findRenderObject() as RenderBox;
+          final Offset position = box.globalToLocal(details.globalPosition);
+          showDialog(
+            context: context,
+            builder: (ctx) => AlertDialog(
+              title: const Text('New Node'),
+              content: TextField(
+                onSubmitted: (value) {
+                  _addNode(value, position);
+                  Navigator.of(ctx).pop();
+                },
               ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(ctx).pop(),
+                  child: const Text('Cancel'),
+                ),
+              ],
             ),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: ElevatedButton(
-              onPressed: () {
-                showDialog(
-                  context: context,
-                  builder: (ctx) {
-                    final TextEditingController textEditingController = TextEditingController();
-
-                    return AlertDialog(
-                      title: const Text('New Node'),
-                      content: TextField(
-                        controller: textEditingController,
-                        // onSubmitted: (value) {
-                        //   _addNode(value);
-                        //   Navigator.of(ctx).pop();
-                        // },
-                      ),
-                      actions: [
-                        TextButton(
-                          onPressed: () {
-                            final value = textEditingController.text;
-                            _addNode(value);
-                            Navigator.of(ctx).pop();
-                          },
-                          child: const Text('Save'),
-                        ),
-                        TextButton(
-                          onPressed: () => Navigator.of(ctx).pop(),
-                          child: const Text('Cancel'),
-                        ),
-                      ],
-                    );
-                  },
-                );
-
-              },
-              child: const Text('Add Node'),
-            ),
-          ),
-        ],
+          );
+        },
+        child: _buildNodeWidgets(),
       ),
     );
   }
 }
+
